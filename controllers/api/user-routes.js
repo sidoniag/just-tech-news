@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { User, Post, Vote } = require('../../models');
+const { User, Post, Vote, Comment } = require('../../models');
 
 // GET /api/users
 router.get('/', (req, res) => {
@@ -74,41 +74,38 @@ router.post('/', (req, res) => {
     });
 });
 
+// POST login
 router.post('/login', (req, res) => {
-    // expects {email: 'lernantino@gmail.com', password:'password1234'}
+    // expects {email: 'lernantino@gmail.com', password: 'password1234'}
     User.findOne({
-        where: {
-            email: req.body.email
-        }
+      where: {
+        email: req.body.email
+      }
     }).then(dbUserData => {
-        if (!dbUserData) {
-            res.status(400).json({ message: 'No user witht that email address'});
-            return;
-        }
-       // res.json({ user: dbUserData });
-
-        // verify user
-        const validPassword = dbUserData.checkPassword(req.body.password);
-        if (!validPassword) {
-            res.status(400).json({ message: 'Incorrect password!' });
-            return;
-        }
-
-        req.session.save(() => {
-            // declare session variables
-            req.session.user_id = dbUserData.id;
-            req.session.username = dbUserData.username;
-            req.session.loggedIn = true;
-
-        res.json({ dbUserData, message: 'You are now logged in!'});
-        });
+      if (!dbUserData) {
+        res.status(400).json({ message: 'No user with that email address!' });
+        return;
+      }
+  
+      const validPassword = dbUserData.checkPassword(req.body.password);
+      if (!validPassword) {
+        res.status(400).json({ message: 'Incorrect password!' });
+        return;
+      }
+  
+      req.session.save(() => {
+        // declare session variables
+        req.session.user_id = dbUserData.id;
+        req.session.username = dbUserData.username;
+        req.session.loggedIn = true;
+  
+        res.json({ user: dbUserData, message: 'You are now logged in!' });
+      });
     });
-});
+  });
 
 // PUT /api/users/1
 router.put('/:id', (req, res) => {
-    // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
-
     // if req.body has exact key/value paris to match the model, you can just use `req.body` instead
     // pass in req.body instead to only update what's passed through 
     User.update(req.body, {
@@ -148,17 +145,6 @@ router.delete('/:id', (req, res) => {
             console.log(err);
             res.status(500).json(err);
         });
-});
-
-router.post('/logout', (req, res) => {
-    if (req.session.loggedIn) {
-        req.session.destroy(() => {
-          res.status(204).end();
-        });
-      }
-      else {
-        res.status(404).end();
-      }
 });
 
 module.exports = router;
